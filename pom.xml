@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.ancoron</groupId>
+    <artifactId>uuid-serial</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+
+        <outputDir>${project.build.directory}</outputDir>
+        <uuids>1000000</uuids>
+        <interval_days>365</interval_days>
+        <offset_days>0</offset_days>
+        <uuid.historic>false</uuid.historic>
+        <uuid.shifts></uuid.shifts>
+        <uuid.skip.v1>true</uuid.skip.v1>
+        <uuid.reversed>false</uuid.reversed>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.uuid</groupId>
+            <artifactId>java-uuid-generator</artifactId>
+            <version>3.1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M3</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <output.dir>${outputDir}</output.dir>
+                        <count>${uuids}</count>
+                        <interval_days>${interval_days}</interval_days>
+                        <offset_days>${offset_days}</offset_days>
+                        <uuid.historic>${uuid.historic}</uuid.historic>
+                        <uuid.shifts>${uuid.shifts}</uuid.shifts>
+                        <uuid.skip.v1>${uuid.skip.v1}</uuid.skip.v1>
+                        <uuid.reversed>${uuid.reversed}</uuid.reversed>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
