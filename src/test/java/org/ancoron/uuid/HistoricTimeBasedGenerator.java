@@ -28,15 +28,17 @@ import com.fasterxml.uuid.impl.TimeBasedGenerator;
  */
 public class HistoricTimeBasedGenerator extends TimeBasedGenerator
 {
+    private final long start;
     private final long interval;
 
-    private final AtomicLong current;
+    private final AtomicLong offset;
 
     public HistoricTimeBasedGenerator(EthernetAddress ethAddr, UUIDTimer timer, long startEpochMillis, long intervalNanos)
     {
         super(ethAddr, timer);
 
-        this.current = new AtomicLong(startEpochMillis * 10000L + 0x01b21dd213814000L);
+        this.start = startEpochMillis * 10000L + 0x01b21dd213814000L;
+        this.offset = new AtomicLong(timer.getTimestamp() - this.start);
 
         // 1 ns -> 100 ns precision
         this.interval = intervalNanos / 100L;
@@ -45,7 +47,8 @@ public class HistoricTimeBasedGenerator extends TimeBasedGenerator
     @Override
     public UUID generate()
     {
-        final long rawTimestamp = current.addAndGet(interval);
+        final long now = _timer.getTimestamp();
+        long rawTimestamp = now - offset.addAndGet(-interval);
         // Time field components are kind of shuffled, need to slice:
         int clockHi = (int) (rawTimestamp >>> 32);
         int clockLo = (int) rawTimestamp;

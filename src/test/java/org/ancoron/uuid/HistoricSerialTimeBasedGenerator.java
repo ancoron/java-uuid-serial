@@ -24,17 +24,19 @@ import com.fasterxml.uuid.UUIDTimer;
  *
  * @author ancoron
  */
-public class HistoricTimeIntervalGenerator extends SerialTimeBasedGenerator
+public class HistoricSerialTimeBasedGenerator extends SerialTimeBasedGenerator
 {
+    private final long start;
     private final long interval;
 
-    private final AtomicLong current;
+    private final AtomicLong offset;
 
-    public HistoricTimeIntervalGenerator(EthernetAddress ethAddr, UUIDTimer timer, int shift, long startEpochMillis, long intervalNanos)
+    public HistoricSerialTimeBasedGenerator(EthernetAddress ethAddr, UUIDTimer timer, int shift, long startEpochMillis, long intervalNanos)
     {
         super(ethAddr, timer, shift);
 
-        this.current = new AtomicLong(startEpochMillis * 10000L + 0x01b21dd213814000L);
+        this.start = startEpochMillis * 10000L + 0x01b21dd213814000L;
+        this.offset = new AtomicLong(timer.getTimestamp() - this.start);
 
         // 1 ns -> 100 ns precision
         this.interval = intervalNanos / 100L;
@@ -43,6 +45,6 @@ public class HistoricTimeIntervalGenerator extends SerialTimeBasedGenerator
     @Override
     protected long getTimestamp()
     {
-        return current.addAndGet(interval);
+        return super.getTimestamp() - offset.addAndGet(-interval);
     }
 }

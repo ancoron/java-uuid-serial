@@ -19,6 +19,7 @@
         <uuid.shifts></uuid.shifts>
         <uuid.skip.v1>true</uuid.skip.v1>
         <uuid.reversed>false</uuid.reversed>
+        <nodes></nodes>
     </properties>
 
     <dependencies>
@@ -57,6 +58,7 @@
                         <uuid.shifts>${uuid.shifts}</uuid.shifts>
                         <uuid.skip.v1>${uuid.skip.v1}</uuid.skip.v1>
                         <uuid.reversed>${uuid.reversed}</uuid.reversed>
+                        <nodes>${nodes}</nodes>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

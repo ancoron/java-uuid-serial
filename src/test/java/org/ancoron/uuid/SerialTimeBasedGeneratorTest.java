@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.junit.After;
 
 /**
  *
@@ -70,6 +71,7 @@ public class SerialTimeBasedGeneratorTest
     private static final SecureRandom RAND = new SecureRandom();
 
     private static final int BUFFER_SIZE = 4 * 1024 * 1024;
+    private static final int THREADS = Integer.getInteger("nodes", Runtime.getRuntime().availableProcessors());
     private static final int COUNT = Integer.getInteger("count", 1_000_000);
     private static final String DIR_OUTPUT = System.getProperty("output.dir");
     private static final Integer DAYS_TIMERANGE = Integer.getInteger("interval_days", 365);
@@ -153,11 +155,9 @@ public class SerialTimeBasedGeneratorTest
     {
         JavaUtilLogger.setLogLevel(JavaUtilLogger.LOG_ERROR_AND_ABOVE);
 
-        int nodes = Runtime.getRuntime().availableProcessors();
-
         Map<EthernetAddress, UUIDTimer> configs = new LinkedHashMap<>();
 
-        for (int i = 0; i < nodes; i++) {
+        for (int i = 0; i < THREADS; i++) {
             EthernetAddress eth = generateNode();
             UUIDTimer timer = new UUIDTimer(RAND, getSync(eth));
             configs.put(eth, timer);
@@ -206,7 +206,7 @@ public class SerialTimeBasedGeneratorTest
 
             default: {
                 if (historic) {
-                    gen = new HistoricTimeIntervalGenerator(eth, timer, shift, startTime, interval);
+                    gen = new HistoricSerialTimeBasedGenerator(eth, timer, shift, startTime, interval);
                 } else {
                     gen = new SerialTimeBasedGenerator(eth, timer, shift);
                 }
@@ -258,30 +258,33 @@ public class SerialTimeBasedGeneratorTest
     }
 
     @Test
+    @SuppressWarnings("UnusedAssignment")
     public void generate() throws Exception
     {
-        int coreCount = instances.length;
+        final int coreCount = instances.length;
+        final int perNode = COUNT / coreCount + 1;
 
-        final int total = COUNT * coreCount;
+        final UUID[] uuids = new UUID[COUNT];
 
-        final UUID[] uuids = new UUID[total];
-        final List<Callable<UUID>> calls = new ArrayList<>(coreCount);
+        ExecutorService exe = Executors.newFixedThreadPool(coreCount);
 
         for (int i = 0; i < coreCount; i++) {
             final NoArgGenerator gen = instances[i];
-            final int start = i * COUNT;
-            calls.add((Callable<UUID>) () -> {
-                UUID uuid = null;
-                for (int j = 0; j < COUNT; j++) {
-                    uuid = gen.generate();
-                    uuids[start + j] = uuid;
+            synchronized (gen) {
+                gen.wait(0, 123);
+            }
+
+            final int offset = i;
+            exe.submit(() -> {
+                for (int j = 0; j < perNode; j++) {
+                    int index = j * coreCount + offset;
+                    if (index < COUNT) {
+                        uuids[index] = gen.generate();
+                    }
                 }
-                return uuid;
             });
         }
 
-        ExecutorService exe = Executors.newFixedThreadPool(coreCount);
-        exe.invokeAll(calls);
         exe.shutdown();
         exe.awaitTermination(5, TimeUnit.MINUTES);
 
@@ -289,7 +292,7 @@ public class SerialTimeBasedGeneratorTest
         logUuid(" Last", uuids[uuids.length - 1]);
 
         UUID curr;
-        for (int i = 0; i < total; i++) {
+        for (int i = 0; i < COUNT; i++) {
             curr = uuids[i];
 
             Assert.assertEquals("Unexpected UUID version in '" + curr + "'", 1, curr.version());
@@ -319,8 +322,13 @@ public class SerialTimeBasedGeneratorTest
         }
         writeUUIDs(filename + ".txt", uuids);
 
+        // cleanup memory for the next run...
         exe = null;
         Arrays.fill(uuids, null);
+    }
+
+    @After
+    public void cleanup() {
         System.gc();
     }
 
