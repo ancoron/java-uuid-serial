@@ -103,13 +103,14 @@ public class SerialTimeBasedGeneratorTest
         Duration duration = Duration.ofDays(DAYS_TIMERANGE);
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Zulu"));
-        ZonedDateTime start = now.minus(duration).minusDays(DAYS_OFFSET);
+        ZonedDateTime end = now.minusDays(DAYS_OFFSET);
+        ZonedDateTime start = end.minus(duration);
 
         long startTime = start.toInstant().toEpochMilli();
-        long interval = duration.dividedBy(COUNT).toNanos();
+        long interval = duration.dividedBy(COUNT).multipliedBy(THREADS).toNanos();
 
-        LOG.log(Level.INFO, "Start time for UUID timestamp is {0} (interval: {1} nanoseconds)",
-                new Object[]{start, interval});
+        LOG.log(Level.INFO, "UUID timestamp range: {0} - {1} (interval: {2} nanoseconds)",
+                new Object[] {start, end, interval});
 
         List<Object[]> params = new ArrayList<>();
 
