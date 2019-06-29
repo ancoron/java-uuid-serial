@@ -59,6 +59,7 @@
                         <uuid.skip.v1>${uuid.skip.v1}</uuid.skip.v1>
                         <uuid.reversed>${uuid.reversed}</uuid.reversed>
                         <nodes>${nodes}</nodes>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
