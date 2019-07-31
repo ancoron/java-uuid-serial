@@ -30,14 +30,12 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -68,7 +66,7 @@ public class SerialTimeBasedGeneratorTest
 
     private static final Logger LOG = Logger.getLogger(SerialTimeBasedGeneratorTest.class.getName());
 
-    private static final SecureRandom RAND = new SecureRandom();
+    private static final SecureRandom RAND = new SecureRandom("A constant random seed".getBytes());
 
     private static final int BUFFER_SIZE = 4 * 1024 * 1024;
     private static final int THREADS = Integer.getInteger("nodes", Runtime.getRuntime().availableProcessors());
@@ -80,6 +78,7 @@ public class SerialTimeBasedGeneratorTest
     private static final boolean REVERSED = Boolean.getBoolean("uuid.reversed");
     private static final String SHIFT = System.getProperty("uuid.shifts");
     private static final boolean SKIP_V1 = Boolean.getBoolean("uuid.skip.v1");
+    private static final boolean WITH_NODE_TIME_DIFF = Boolean.getBoolean("nodes.time.diff");
 
     private static final Map<EthernetAddress, UUIDTimer> CONFIGS = new LinkedHashMap<>();
 
@@ -220,9 +219,15 @@ public class SerialTimeBasedGeneratorTest
     @Before
     public void initTest() throws Exception
     {
+        final int nodeTimeDiffMax = (int) (interval / 1_000_000L) * 3;
+
         List<NoArgGenerator> tmp = new ArrayList<>();
         CONFIGS.entrySet().forEach((entry) -> {
-            tmp.add(generate(entry.getKey(), entry.getValue(), shift, historic, startTime, interval));
+            long realStart = startTime;
+            if (WITH_NODE_TIME_DIFF) {
+                realStart += RAND.nextInt(nodeTimeDiffMax) - (nodeTimeDiffMax / 2);
+            }
+            tmp.add(generate(entry.getKey(), entry.getValue(), shift, historic, realStart, interval));
         });
         instances = tmp.toArray(new NoArgGenerator[tmp.size()]);
     }
@@ -291,15 +296,6 @@ public class SerialTimeBasedGeneratorTest
 
         logUuid("First", uuids[0]);
         logUuid(" Last", uuids[uuids.length - 1]);
-
-        UUID curr;
-        for (int i = 0; i < COUNT; i++) {
-            curr = uuids[i];
-
-            Assert.assertEquals("Unexpected UUID version in '" + curr + "'", 1, curr.version());
-            Assert.assertEquals("Unexpected UUID variant in '" + curr + "'", 2, curr.variant());
-        }
-
 
         String filename = "uuids";
         switch (shift) {

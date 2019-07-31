@@ -20,6 +20,7 @@
         <uuid.skip.v1>true</uuid.skip.v1>
         <uuid.reversed>false</uuid.reversed>
         <nodes></nodes>
+        <nodes.time.diff>false</nodes.time.diff>
     </properties>
 
     <dependencies>
@@ -59,6 +60,7 @@
                         <uuid.skip.v1>${uuid.skip.v1}</uuid.skip.v1>
                         <uuid.reversed>${uuid.reversed}</uuid.reversed>
                         <nodes>${nodes}</nodes>
+                        <nodes.time.diff>${nodes.time.diff}</nodes.time.diff>
                         <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
