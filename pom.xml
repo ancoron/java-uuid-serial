@@ -18,6 +18,7 @@
         <uuid.historic>false</uuid.historic>
         <uuid.shifts></uuid.shifts>
         <uuid.skip.v1>true</uuid.skip.v1>
+        <uuid.skip.random>true</uuid.skip.random>
         <uuid.reversed>false</uuid.reversed>
         <nodes></nodes>
         <nodes.time.diff>false</nodes.time.diff>
@@ -58,6 +59,7 @@
                         <uuid.historic>${uuid.historic}</uuid.historic>
                         <uuid.shifts>${uuid.shifts}</uuid.shifts>
                         <uuid.skip.v1>${uuid.skip.v1}</uuid.skip.v1>
+                        <uuid.skip.random>${uuid.skip.random}</uuid.skip.random>
                         <uuid.reversed>${uuid.reversed}</uuid.reversed>
                         <nodes>${nodes}</nodes>
                         <nodes.time.diff>${nodes.time.diff}</nodes.time.diff>

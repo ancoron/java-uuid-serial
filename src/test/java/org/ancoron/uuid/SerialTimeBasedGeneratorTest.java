@@ -48,6 +48,7 @@ import com.fasterxml.uuid.TimestampSynchronizer;
 import com.fasterxml.uuid.UUIDTimer;
 import com.fasterxml.uuid.ext.FileBasedTimestampSynchronizer;
 import com.fasterxml.uuid.ext.JavaUtilLogger;
+import com.fasterxml.uuid.impl.RandomBasedGenerator;
 import com.fasterxml.uuid.impl.TimeBasedGenerator;
 import java.time.Instant;
 import java.util.Arrays;
@@ -78,6 +79,7 @@ public class SerialTimeBasedGeneratorTest
     private static final boolean REVERSED = Boolean.getBoolean("uuid.reversed");
     private static final String SHIFT = System.getProperty("uuid.shifts");
     private static final boolean SKIP_V1 = Boolean.getBoolean("uuid.skip.v1");
+    private static final boolean SKIP_RANDOM = Boolean.getBoolean("uuid.skip.random");
     private static final boolean WITH_NODE_TIME_DIFF = Boolean.getBoolean("nodes.time.diff");
 
     private static final Map<EthernetAddress, UUIDTimer> CONFIGS = new LinkedHashMap<>();
@@ -119,6 +121,10 @@ public class SerialTimeBasedGeneratorTest
             } else {
                 params.add(new Object[] {-1, false, null, null});
             }
+        }
+
+        if (!SKIP_RANDOM) {
+            params.add(new Object[] {-4, false, null, null});
         }
 
         if (HISTORIC) {
@@ -186,6 +192,10 @@ public class SerialTimeBasedGeneratorTest
         final NoArgGenerator gen;
 
         switch (shift) {
+            case -4: {
+                gen = new RandomBasedGenerator(new SecureRandom(eth.asByteArray()));
+                break;
+            }
             case -2: {
                 if (historic) {
                     gen = new HistoricReversedTimeIntervalGenerator(eth, timer, startTime, interval);
@@ -219,12 +229,12 @@ public class SerialTimeBasedGeneratorTest
     @Before
     public void initTest() throws Exception
     {
-        final int nodeTimeDiffMax = (int) (interval / 1_000_000L) * 3;
+        final int nodeTimeDiffMax = interval == null ? 0 : ((int) (interval / 1_000_000L) * 3);
 
         List<NoArgGenerator> tmp = new ArrayList<>();
         CONFIGS.entrySet().forEach((entry) -> {
-            long realStart = startTime;
-            if (WITH_NODE_TIME_DIFF) {
+            Long realStart = startTime;
+            if (startTime != null && WITH_NODE_TIME_DIFF) {
                 realStart += RAND.nextInt(nodeTimeDiffMax) - (nodeTimeDiffMax / 2);
             }
             tmp.add(generate(entry.getKey(), entry.getValue(), shift, historic, realStart, interval));
@@ -256,7 +266,7 @@ public class SerialTimeBasedGeneratorTest
                     uuid.version(),
                     uuid.variant(),
                     Long.toHexString(uuid.getMostSignificantBits()).toUpperCase(),
-                    uuid.clockSequence(),
+                    shift > -3 ? uuid.clockSequence() : null,
                     shift,
                     ts
                 }
@@ -299,6 +309,9 @@ public class SerialTimeBasedGeneratorTest
 
         String filename = "uuids";
         switch (shift) {
+            case -4:
+                filename += ".random";
+                break;
             case -2:
                 filename += ".reversed-serial";
                 break;
